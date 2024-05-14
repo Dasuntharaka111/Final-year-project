@@ -12,18 +12,22 @@ const int EN = 19;
 int enA = 6;
 int in1 = 7;
 int in2 = 5;
-
+int Incoming_data;
 int enB = 3;
 int in3 = 4;
 int in4 = 2;
 
+struct RemoteControlData {
+  byte x;
+  byte y;
+};
+//RemoteControlData remoteData;
 const uint64_t pipe = 0xE8E8F0F0E1LL;
 
 RF24 radio(CE_PIN, CSN_PIN);
 byte data[2];
-
 unsigned long lastReceiveTime = 0;
-
+int incoming_data;
 
 unsigned long stepperTimer = 0;
 int stepperdelay = 800;  
@@ -58,21 +62,33 @@ void setup() {
 
 void loop() {
   currentMicros = micros();
-  //lastReceiveTime= millis();
   radioFun();
- // stepper_run();
-  stop_stepper();
+ /* if (Serial.available()>0){
+    Incoming_data=Serial.read();
+    if(Incoming_data=='s'){
+      stepper_run();
+    }
+    else{
+      stop_stepper();
+    }
+  }
+  
+  */
+  
 }
+ 
+  
+
 
 void radioFun() {
   if (radio.available()) {
     radio.read(data, sizeof(data));
-    Serial.println(data[1]);
-
+    Serial.println(data[0]);
+ /*   
     if (data[1] > 250) {
       motor_run_F();
       //Serial.println("forward");
-    } else if (data[1] < 60) {
+    } else if (data[1] < 60 && data[1]>0) {
       motor_run_B();
     } else if ((data[1] > 130 && data[1] < 160)&& data[0]>130 && data[0]<160) {
       motor_run_stop();
@@ -80,11 +96,13 @@ void radioFun() {
     else if (data[0] > 250){
       right();
     }
-    else if (data[0]<50){
+    else if (data[0]<50 && data[0]>0){
       left();
     }
     
+  */  
   }
+  
 }
 
 void motor_run_F() {
