@@ -5,32 +5,28 @@
 #define CE_PIN 9
 #define CSN_PIN 10
 
-const int stepPin = 18;
-const int dirPin = 8;
-const int EN = 19;
+const int stepPin = 2;
+const int dirPin = 4;
+const int EN = 7;
 
 int enA = 6;
-int in1 = 7;
-int in2 = 5;
-int Incoming_data;
+int in1 = 15;
+int in2 = 16;
+
 int enB = 3;
-int in3 = 4;
-int in4 = 2;
+int in3 = 17;
+int in4 = 18;
 
-struct RemoteControlData {
-  byte x;
-  byte y;
-};
-//RemoteControlData remoteData;
-const uint64_t pipe = 0xE8E8F0F0E1LL;
-
+const byte address[6] = "00001";
+char receivedData[32] = "";
 RF24 radio(CE_PIN, CSN_PIN);
-byte data[2];
+int data[2];
+byte incoming_data;
 unsigned long lastReceiveTime = 0;
-int incoming_data;
+
 
 unsigned long stepperTimer = 0;
-int stepperdelay = 800;  
+int stepperdelay = 900;  
 int stepsCounter = 0;
 bool stepperDirection=1;  
 byte stepInState=0;
@@ -49,12 +45,12 @@ void setup() {
   digitalWrite(EN, LOW);
 
   Serial.begin(9600);
-  Serial.println("Nrf24L01 Receiver Starting");
+  //Serial.println("Nrf24L01 Receiver Starting");
   radio.begin();
-  radio.openReadingPipe(1, pipe);
+  radio.openReadingPipe(0, address);
+  radio.setPALevel(RF24_PA_MIN);
   radio.startListening();
 
-  // Start the stepper motor moving in the initial direction
   digitalWrite(dirPin, stepperDirection);
   digitalWrite(stepPin, stepInState);
   digitalWrite(EN, LOW);
@@ -62,56 +58,48 @@ void setup() {
 
 void loop() {
   currentMicros = micros();
+  lastReceiveTime= millis();
   radioFun();
- /* if (Serial.available()>0){
-    Incoming_data=Serial.read();
-    if(Incoming_data=='s'){
-      stepper_run();
-    }
-    else{
-      stop_stepper();
-    }
-  }
-  
-  */
+  //stop_stepper();
+ stepper_run();
   
 }
- 
-  
-
 
 void radioFun() {
   if (radio.available()) {
     radio.read(data, sizeof(data));
-    Serial.println(data[0]);
- /*   
+    radio.read(&receivedData, sizeof(receivedData));
+    //Serial.println("Serial start");
+    //Serial.print("data[1]");
+    //Serial.println(data[1]);
+    //Serial.print("data[0]");
+    //Serial.println(data[0]);
+   
     if (data[1] > 250) {
       motor_run_F();
       //Serial.println("forward");
-    } else if (data[1] < 60 && data[1]>0) {
+    } else if ((data[1] < 100) & (data[1]>=0)) {
       motor_run_B();
-    } else if ((data[1] > 130 && data[1] < 160)&& data[0]>130 && data[0]<160) {
+    } else if ((data[1] > 100 && data[1] < 220)&& data[0]>100 && data[0]<220) {
       motor_run_stop();
     }
     else if (data[0] > 250){
       right();
     }
-    else if (data[0]<50 && data[0]>0){
+    else if ((data[0]<100) && (data[0]>=0)){
       left();
     }
     
-  */  
   }
-  
 }
 
 void motor_run_F() {
-  digitalWrite(in1, HIGH);
-  digitalWrite(in2, LOW);
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, HIGH);
   analogWrite(enA, 100);
-  digitalWrite(in4, HIGH);
+  digitalWrite(in4,HIGH);
   digitalWrite(in3, LOW);
-  analogWrite(enB, 100);
+  analogWrite(enB, 65);
 }
 void right() {
   digitalWrite(in1, LOW);
@@ -125,14 +113,14 @@ void left() {
   digitalWrite(in1, LOW);
   digitalWrite(in2, LOW);
   analogWrite(enA, 100);
-  digitalWrite(in4, LOW);
-  digitalWrite(in3, HIGH);
+  digitalWrite(in4, HIGH);
+  digitalWrite(in3, LOW);
   analogWrite(enB, 100);
 }
 
 void motor_run_B() {
-  digitalWrite(in1, LOW);
-  digitalWrite(in2, HIGH);
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
   analogWrite(enA, 200);
   digitalWrite(in4, LOW);
   digitalWrite(in3, HIGH);
@@ -159,7 +147,7 @@ void stepper_run() {
     digitalWrite(stepPin, stepInState);
     stepsCounter++;
     
-    if (stepsCounter >9000) {
+    if (stepsCounter >19000) {
       stepperDirection = !stepperDirection;
       digitalWrite(dirPin, stepperDirection);
       stepsCounter = 0;
